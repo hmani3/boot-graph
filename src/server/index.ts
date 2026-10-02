@@ -208,10 +208,21 @@ export async function startServer(options: ServerOptions) {
         nodeOut.includes("ERESOLVE") ||
         nodeOut.includes("Conflicting peer dependency")
       ) {
+        if (!cmdToRun.includes("--legacy-peer-deps")) {
+          broadcast({
+            type: "TERMINAL_OUTPUT",
+            nodeId,
+            chunk: `\r\n\x1b[33m[diagnostic] npm peer dependency conflict (ERESOLVE) detected.\x1b[0m\r\n\x1b[36m[auto-recovery] Automatically attempting installation with --legacy-peer-deps...\x1b[0m\r\n`,
+          });
+          const retryCmd = `${cmdToRun} --legacy-peer-deps`;
+          updateNode(nodeId, { command: retryCmd });
+          return await executeNode(nodeId, retryCmd);
+        }
+
         broadcast({
           type: "TERMINAL_OUTPUT",
           nodeId,
-          chunk: `\r\n\x1b[33m[diagnostic] npm peer dependency conflict (ERESOLVE).\x1b[0m\r\n\x1b[33m[diagnostic] Run "npm install --legacy-peer-deps", or create a .npmrc file with "legacy-peer-deps=true" in the repository root.\x1b[0m\r\n`,
+          chunk: `\r\n\x1b[33m[diagnostic] npm peer dependency conflict (ERESOLVE).\x1b[0m\r\n\x1b[33m[diagnostic] Create a .npmrc file with "legacy-peer-deps=true" in the repository root or configure package.json overrides.\x1b[0m\r\n`,
         });
       }
     }
