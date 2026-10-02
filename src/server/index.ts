@@ -204,6 +204,15 @@ export async function startServer(options: ServerOptions) {
           nodeId,
           chunk: `\r\n\x1b[33m[diagnostic] Docker daemon is not active on this Windows host.\x1b[0m\r\n\x1b[33m[diagnostic] Start Docker Desktop from the Start menu, or click "Skip" in the interface to proceed without local containers.\x1b[0m\r\n`,
         });
+      } else if (
+        nodeOut.includes("ERESOLVE") ||
+        nodeOut.includes("Conflicting peer dependency")
+      ) {
+        broadcast({
+          type: "TERMINAL_OUTPUT",
+          nodeId,
+          chunk: `\r\n\x1b[33m[diagnostic] npm peer dependency conflict (ERESOLVE).\x1b[0m\r\n\x1b[33m[diagnostic] Run "npm install --legacy-peer-deps", or create a .npmrc file with "legacy-peer-deps=true" in the repository root.\x1b[0m\r\n`,
+        });
       }
     }
 
