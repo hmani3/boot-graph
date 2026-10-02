@@ -3,7 +3,6 @@ import {
   ReactFlow,
   ReactFlowProvider,
   Background,
-  MiniMap,
   Node,
   Edge,
   Connection,
@@ -14,18 +13,11 @@ import {
   BackgroundVariant,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-  RotateCcw,
-  ChevronRight,
-  CheckCircle2,
-} from "lucide-react";
+import { Maximize2, RotateCcw } from "lucide-react";
 
 import { useGraphStore } from "../store/useGraphStore";
 import { CustomNode } from "./CustomNode";
-import { SetupNode, LifecycleTier, TIER_THEMES } from "../types";
+import { SetupNode, LifecycleTier } from "../types";
 
 const nodeTypes = {
   customNode: CustomNode,
@@ -132,7 +124,7 @@ function computeDeterministicLayout(rawNodes: SetupNode[]): Node<{ node: SetupNo
 const CanvasInner: React.FC = () => {
   const { manifest, connectNodes, disconnectNodes, updateNode, resetLayout } =
     useGraphStore();
-  const { zoomIn, zoomOut, fitView, setCenter } = useReactFlow();
+  const { fitView } = useReactFlow();
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<{ node: SetupNode }>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -258,77 +250,10 @@ const CanvasInner: React.FC = () => {
     fitView({ padding: 0.08, duration: 400 });
   }, [fitView]);
 
-  const jumpToStage = useCallback(
-    (stage: LifecycleTier) => {
-      const x = (TIER_X_OFFSET[stage] || 60) + 210;
-      setCenter(x, 240, { duration: 450, zoom: 0.95 });
-    },
-    [setCenter]
-  );
-
-  const stagesInProject = manifest?.summary?.tiersPresent || [1, 2, 3, 4, 5, 6, 7];
-
   return (
     <div className="w-full h-[calc(100vh-3.5rem)] relative bg-[#090d16]">
-      {/* Horizontal Stage Pipeline Navigation Bar */}
-      <div className="absolute top-4 left-6 z-20 hidden lg:flex items-center gap-1.5 p-1.5 bg-[#0f172a]/95 backdrop-blur-md border border-slate-800 rounded-xl shadow-2xl overflow-x-auto max-w-[calc(100vw-28rem)]">
-        {([1, 2, 3, 4, 5, 6, 7] as LifecycleTier[]).map((tier, idx) => {
-          const theme = TIER_THEMES[tier];
-          const nodesInTier = manifest?.nodes.filter((n) => n.tier === tier) || [];
-          const isPresent = nodesInTier.length > 0;
-          const allCompleted =
-            isPresent && nodesInTier.every((n) => n.status === "completed");
-          const hasSkipped = isPresent && nodesInTier.some((n) => n.status === "skipped");
-
-          return (
-            <React.Fragment key={tier}>
-              <button
-                onClick={() => jumpToStage(tier)}
-                disabled={!isPresent}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition select-none ${
-                  !isPresent
-                    ? "opacity-30 cursor-not-allowed text-gray-500"
-                    : allCompleted
-                    ? "bg-emerald-950/40 text-emerald-300 border border-emerald-800/50 hover:bg-emerald-900/50"
-                    : hasSkipped
-                    ? "bg-amber-950/40 text-amber-300 border border-amber-800/50 hover:bg-amber-900/50"
-                    : "bg-slate-900/80 text-gray-300 border border-slate-800 hover:border-slate-700 hover:text-white"
-                }`}
-                title={`Jump to Stage ${tier}: ${theme.name} (${nodesInTier.length} steps)`}
-              >
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: theme.dotColor }}
-                />
-                <span className="font-semibold">{theme.stageLabel}</span>
-                <span className="text-[11px] text-gray-400 truncate max-w-[100px]">
-                  {theme.name}
-                </span>
-                {allCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-              </button>
-              {idx < 6 && <ChevronRight className="w-3.5 h-3.5 text-slate-700 shrink-0" />}
-            </React.Fragment>
-          );
-        })}
-      </div>
-
-      {/* Floating Canvas Navigation Toolbar */}
+      {/* Canvas Navigation Toolbar */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 p-1.5 bg-[#0f172a]/95 backdrop-blur-md border border-slate-800 rounded-xl shadow-2xl">
-        <button
-          onClick={() => zoomIn({ duration: 250 })}
-          className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-slate-800 transition"
-          title="Zoom In"
-        >
-          <ZoomIn className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => zoomOut({ duration: 250 })}
-          className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-slate-800 transition"
-          title="Zoom Out"
-        >
-          <ZoomOut className="w-4 h-4" />
-        </button>
-        <div className="w-px h-5 bg-slate-800 my-auto" />
         <button
           onClick={handleFitView}
           className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-slate-800 transition"
@@ -339,7 +264,7 @@ const CanvasInner: React.FC = () => {
         <button
           onClick={handleResetLayout}
           className="p-2 rounded-lg text-gray-200 hover:text-white bg-indigo-600/80 hover:bg-indigo-600 transition flex items-center gap-1.5 text-xs font-semibold px-3 rounded-lg shadow-sm"
-          title="Instantly auto-arrange all nodes into non-overlapping stage columns"
+          title="Auto-arrange all nodes into stage columns"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Auto-Arrange</span>
@@ -374,28 +299,6 @@ const CanvasInner: React.FC = () => {
           gap={24}
           size={1.5}
           color="#1e293b"
-        />
-
-        <MiniMap
-          nodeColor={(n) => {
-            const node = (n.data as any)?.node as SetupNode;
-            switch (node?.status) {
-              case "completed":
-                return "#10b981";
-              case "running":
-                return "#0ea5e9";
-              case "failed":
-                return "#f43f5e";
-              case "ready":
-                return "#eab308";
-              case "skipped":
-                return "#64748b";
-              default:
-                return "#334155";
-            }
-          }}
-          className="!bg-[#0f172a]/90 !border-slate-800 !rounded-xl overflow-hidden shadow-xl"
-          maskColor="rgba(9, 13, 22, 0.75)"
         />
       </ReactFlow>
     </div>

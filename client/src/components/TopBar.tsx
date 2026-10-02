@@ -60,26 +60,25 @@ export const TopBar: React.FC = () => {
             {completed} of {total} steps completed
           </span>
         </div>
-
-        {missingEnv > 0 && (
-          <button
-            onClick={() => setIsEnvModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-950/60 border border-amber-800/80 text-amber-300 hover:bg-amber-900/80 transition"
-          >
-            <Key className="w-3.5 h-3.5" />
-            <span>{missingEnv} missing variables</span>
-          </button>
-        )}
       </div>
 
       <div className="flex items-center gap-2">
         <button
           onClick={() => setIsEnvModalOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 hover:bg-slate-800 text-gray-300 border border-slate-800 transition"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+            missingEnv > 0
+              ? "bg-amber-950/60 border-amber-800/80 text-amber-300 hover:bg-amber-900/80"
+              : "bg-slate-900 border-slate-800 text-gray-300 hover:bg-slate-800 hover:text-white"
+          }`}
           title="Configure environment variables"
         >
           <Key className="w-3.5 h-3.5 text-emerald-400" />
           <span>.env</span>
+          {missingEnv > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300">
+              {missingEnv} missing
+            </span>
+          )}
         </button>
 
         <button
