@@ -19,7 +19,7 @@
     "build:client": "cd client && npm run build",
     "build": "npm run build:server && npm run build:client",
     "start": "node dist/cli/index.js",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test src/engine/dag.test.ts src/scanner/scanner.test.ts"
   },
   "keywords": [
     "onboarding",

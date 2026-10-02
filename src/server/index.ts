@@ -224,6 +224,15 @@ export async function startServer(options: ServerOptions) {
           nodeId,
           chunk: `\r\n\x1b[33m[diagnostic] npm peer dependency conflict (ERESOLVE).\x1b[0m\r\n\x1b[33m[diagnostic] Create a .npmrc file with "legacy-peer-deps=true" in the repository root or configure package.json overrides.\x1b[0m\r\n`,
         });
+      } else if (
+        nodeOut.includes("SlowBuffer") ||
+        (nodeOut.includes("Cannot read properties of undefined") && nodeOut.includes("prototype"))
+      ) {
+        broadcast({
+          type: "TERMINAL_OUTPUT",
+          nodeId,
+          chunk: `\r\n\x1b[33m[diagnostic] Node.js runtime incompatibility detected (SlowBuffer prototype error).\x1b[0m\r\n\x1b[33m[diagnostic] This package requires Node.js 18 or 20 LTS. Ensure that an unsupported newer Node version is not active or shadowing the system Node runtime.\x1b[0m\r\n`,
+        });
       }
     }
 
