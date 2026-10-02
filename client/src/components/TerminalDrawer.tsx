@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
-import { X, Play, Square, Trash2, Terminal as TerminalIcon } from "lucide-react";
+import { X, Play, Square, Trash2, Copy, Check, Terminal as TerminalIcon } from "lucide-react";
 import { useGraphStore } from "../store/useGraphStore";
 
 export const TerminalDrawer: React.FC = () => {
@@ -18,8 +18,24 @@ export const TerminalDrawer: React.FC = () => {
   const xtermInstance = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const lastRenderedLength = useRef<number>(0);
+  const [copied, setCopied] = useState(false);
 
   const node = manifest?.nodes.find((n) => n.id === activeTerminalNodeId);
+
+  const handleCopy = async () => {
+    if (!node?.output) return;
+    const cleanText = node.output.replace(
+      /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g,
+      ""
+    );
+    try {
+      await navigator.clipboard.writeText(cleanText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard write fallback
+    }
+  };
 
   useEffect(() => {
     if (!activeTerminalNodeId || !terminalRef.current) return;
@@ -125,6 +141,29 @@ export const TerminalDrawer: React.FC = () => {
               <Play className="w-3.5 h-3.5" /> Re-run Step
             </button>
           )}
+
+          <button
+            onClick={handleCopy}
+            disabled={!node.output}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition ${
+              copied
+                ? "bg-emerald-950/60 border-emerald-800/80 text-emerald-400"
+                : "bg-slate-900 border-slate-800 text-gray-300 hover:text-white hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+            }`}
+            title="Copy terminal output without ANSI escape codes"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                <span>Copy Output</span>
+              </>
+            )}
+          </button>
 
           <button
             onClick={() => {
