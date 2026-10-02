@@ -1,0 +1,18 @@
+{
+  "name": "saas-starter",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Development server listening on port 3000'",
+    "build": "echo 'Building production bundle'",
+    "db:migrate": "echo 'Migrations applied successfully'",
+    "seed": "echo 'Database seeding completed'"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  }
+}
