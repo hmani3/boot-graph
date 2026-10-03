@@ -23,107 +23,210 @@ const nodeTypes = {
   customNode: CustomNode,
 };
 
-const TIER_X_OFFSET: Record<LifecycleTier, number> = {
-  1: 60,
-  2: 620,
-  3: 1180,
-  4: 1740,
-  5: 2300,
-  6: 2860,
-  7: 3420,
-};
-
 function computeDeterministicLayout(rawNodes: SetupNode[]): Node<{ node: SetupNode }>[] {
-  const tierGroups: Record<number, SetupNode[]> = {
-    1: [],
-    2: [],
-    3: [],
-    4: [],
-    5: [],
-    6: [],
-    7: [],
-  };
-
-  for (const node of rawNodes) {
-    const t = node.tier in tierGroups ? node.tier : 1;
-    tierGroups[t].push(node);
-  }
-
   const result: Node<{ node: SetupNode }>[] = [];
 
-  for (let t = 1; t <= 7; t++) {
-    const group = tierGroups[t] || [];
-    const x = TIER_X_OFFSET[t as LifecycleTier] || 60;
+  const appRuntimes: SetupNode[] = [];
+  const infraRuntimes: SetupNode[] = [];
+  const envNodes: SetupNode[] = [];
+  const packageNodes: SetupNode[] = [];
+  const infraServices: SetupNode[] = [];
+  const migrationNodes: SetupNode[] = [];
+  const generateNodes: SetupNode[] = [];
+  const seedNodes: SetupNode[] = [];
+  const launchNodes: SetupNode[] = [];
+  const otherNodes: SetupNode[] = [];
 
-    const appNodes: SetupNode[] = [];
-    const infraNodes: SetupNode[] = [];
-    const envNodes: SetupNode[] = [];
+  for (const node of rawNodes) {
+    const isInfra =
+      node.id.includes("docker") ||
+      node.id.includes("compose") ||
+      node.id.includes("container") ||
+      node.category === "service" ||
+      (node.provides || []).some((p) => p.includes("docker") || p.startsWith("service:")) ||
+      Boolean(node.command?.includes("docker"));
 
-    for (const node of group) {
-      const isInfra =
-        node.category === "service" ||
-        node.id.includes("docker") ||
-        node.id.includes("compose") ||
-        node.id.includes("container") ||
-        node.id.includes("generate") ||
-        node.provides?.some(
-          (p) =>
-            p.startsWith("service:") ||
-            p.includes("docker") ||
-            p.includes("client")
-        ) ||
-        Boolean(node.command?.includes("docker"));
-
-      const isEnv =
-        !isInfra &&
-        (node.category === "env" || node.tier === 3 || node.id.includes("env"));
-
+    if (node.tier === 1 || node.category === "runtime") {
       if (isInfra) {
-        infraNodes.push(node);
-      } else if (isEnv) {
-        envNodes.push(node);
+        infraRuntimes.push(node);
       } else {
-        appNodes.push(node);
+        appRuntimes.push(node);
       }
+    } else if (node.tier === 3 || node.category === "env" || node.id.includes("env")) {
+      envNodes.push(node);
+    } else if (
+      node.tier === 2 ||
+      node.category === "package" ||
+      node.id.includes("install") ||
+      node.id.includes("deps")
+    ) {
+      packageNodes.push(node);
+    } else if (node.tier === 4 || node.category === "service" || isInfra) {
+      infraServices.push(node);
+    } else if (node.tier === 5 || node.category === "db") {
+      if (
+        node.id.includes("generate") ||
+        node.id.includes("client") ||
+        (node.provides || []).some((p) => p.includes("client"))
+      ) {
+        generateNodes.push(node);
+      } else {
+        migrationNodes.push(node);
+      }
+    } else if (node.tier === 6 || node.category === "seed" || node.id.includes("seed")) {
+      seedNodes.push(node);
+    } else if (
+      node.tier === 7 ||
+      node.category === "app" ||
+      node.id.includes("launch") ||
+      node.id.includes("dev") ||
+      node.id.includes("start")
+    ) {
+      launchNodes.push(node);
+    } else {
+      otherNodes.push(node);
     }
-
-    appNodes.forEach((node, idx) => {
-      const y = 100 + idx * 280;
-      result.push({
-        id: node.id,
-        type: "customNode",
-        position: { x, y },
-        data: { node: { ...node, position: { x, y } } },
-      });
-    });
-
-    envNodes.forEach((node, idx) => {
-      const y = -80 - idx * 280;
-      result.push({
-        id: node.id,
-        type: "customNode",
-        position: { x, y },
-        data: { node: { ...node, position: { x, y } } },
-      });
-    });
-
-    infraNodes.forEach((node, idx) => {
-      const y = 480 + idx * 280;
-      result.push({
-        id: node.id,
-        type: "customNode",
-        position: { x, y },
-        data: { node: { ...node, position: { x, y } } },
-      });
-    });
   }
+
+  const hasInfraServices = infraServices.length > 0 || infraRuntimes.length > 0;
+
+  const VERTICAL_STEP = 370;
+
+  // Col 0: Runtimes
+  const xRuntime = 60;
+  appRuntimes.forEach((node, idx) => {
+    const y = 220 + idx * VERTICAL_STEP;
+    result.push({
+      id: node.id,
+      type: "customNode",
+      position: { x: xRuntime, y },
+      data: { node: { ...node, position: { x: xRuntime, y } } },
+    });
+  });
+  const infraRuntimeStartY = Math.max(770, 220 + appRuntimes.length * VERTICAL_STEP);
+  infraRuntimes.forEach((node, idx) => {
+    const y = infraRuntimeStartY + idx * VERTICAL_STEP;
+    result.push({
+      id: node.id,
+      type: "customNode",
+      position: { x: xRuntime, y },
+      data: { node: { ...node, position: { x: xRuntime, y } } },
+    });
+  });
+
+  // Col 1: Setup Phase (Environment, Packages, Containers)
+  const xEnv = hasInfraServices ? 580 : 560;
+  const xDeps = 540;
+  const xInfraService = 680;
+
+  envNodes.forEach((node, idx) => {
+    const y = 30 + idx * VERTICAL_STEP;
+    result.push({
+      id: node.id,
+      type: "customNode",
+      position: { x: xEnv, y },
+      data: { node: { ...node, position: { x: xEnv, y } } },
+    });
+  });
+  const packageStartY = Math.max(400, 30 + envNodes.length * VERTICAL_STEP);
+  packageNodes.forEach((node, idx) => {
+    const y = packageStartY + idx * VERTICAL_STEP;
+    result.push({
+      id: node.id,
+      type: "customNode",
+      position: { x: xDeps, y },
+      data: { node: { ...node, position: { x: xDeps, y } } },
+    });
+  });
+  const infraServiceStartY = Math.max(
+    770,
+    packageStartY + packageNodes.length * VERTICAL_STEP
+  );
+  infraServices.forEach((node, idx) => {
+    const y = infraServiceStartY + idx * VERTICAL_STEP;
+    result.push({
+      id: node.id,
+      type: "customNode",
+      position: { x: xInfraService, y },
+      data: { node: { ...node, position: { x: xInfraService, y } } },
+    });
+  });
+
+  // Col 2: Schema & Migrations / Build (Tier 5)
+  const xDatabase = hasInfraServices ? 1220 : 1100;
+  migrationNodes.forEach((node, idx) => {
+    const y = 220 + idx * VERTICAL_STEP;
+    result.push({
+      id: node.id,
+      type: "customNode",
+      position: { x: xDatabase, y },
+      data: { node: { ...node, position: { x: xDatabase, y } } },
+    });
+  });
+  const generateStartY = Math.max(
+    590,
+    220 + migrationNodes.length * VERTICAL_STEP
+  );
+  generateNodes.forEach((node, idx) => {
+    const y = generateStartY + idx * VERTICAL_STEP;
+    result.push({
+      id: node.id,
+      type: "customNode",
+      position: { x: xDatabase, y },
+      data: { node: { ...node, position: { x: xDatabase, y } } },
+    });
+  });
+
+  // Col 3: Data Seeding (Tier 6)
+  const hasTier5 = migrationNodes.length > 0 || generateNodes.length > 0;
+  const xSeed = (hasTier5 ? xDatabase : (hasInfraServices ? 1220 : 1100)) + 500;
+  seedNodes.forEach((node, idx) => {
+    const y = 220 + idx * VERTICAL_STEP;
+    result.push({
+      id: node.id,
+      type: "customNode",
+      position: { x: xSeed, y },
+      data: { node: { ...node, position: { x: xSeed, y } } },
+    });
+  });
+
+  // Col 4: Application Launch (Tier 7)
+  const hasTier6 = seedNodes.length > 0;
+  const xLaunch =
+    (hasTier6 ? xSeed : (hasTier5 ? xDatabase : (hasInfraServices ? 1220 : 1100))) + 500;
+  launchNodes.forEach((node, idx) => {
+    const y = 220 + idx * VERTICAL_STEP;
+    result.push({
+      id: node.id,
+      type: "customNode",
+      position: { x: xLaunch, y },
+      data: { node: { ...node, position: { x: xLaunch, y } } },
+    });
+  });
+
+  otherNodes.forEach((node, idx) => {
+    const x = xLaunch + 500;
+    const y = 220 + idx * VERTICAL_STEP;
+    result.push({
+      id: node.id,
+      type: "customNode",
+      position: { x, y },
+      data: { node: { ...node, position: { x, y } } },
+    });
+  });
 
   return result;
 }
 
 const CanvasInner: React.FC = () => {
-  const { manifest, connectNodes, disconnectNodes, updateNode, resetLayout } =
-    useGraphStore();
+  const {
+    manifest,
+    connectNodes,
+    disconnectNodes,
+    updateNode,
+    resetLayout,
+    activeTerminalNodeId,
+  } = useGraphStore();
   const { fitView } = useReactFlow();
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<{ node: SetupNode }>>([]);
@@ -131,6 +234,20 @@ const CanvasInner: React.FC = () => {
 
   const positionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   const isInitialized = useRef(false);
+
+  // Adjust camera position dynamically when the terminal drawer opens or closes
+  useEffect(() => {
+    if (isInitialized.current) {
+      if (activeTerminalNodeId) {
+        fitView({
+          padding: { top: "30px", bottom: "380px", left: "40px", right: "40px" },
+          duration: 350,
+        });
+      } else {
+        fitView({ padding: 0.04, duration: 350 });
+      }
+    }
+  }, [activeTerminalNodeId, fitView]);
 
   // Sync manifest nodes with React Flow state while preserving live drag positions
   useEffect(() => {
@@ -143,7 +260,7 @@ const CanvasInner: React.FC = () => {
         positionsRef.current.set(n.id, n.position);
       }
       setNodes(initialNodes);
-      setTimeout(() => fitView({ padding: 0.08, duration: 400 }), 50);
+      setTimeout(() => fitView({ padding: 0.04, duration: 400 }), 50);
     } else {
       setNodes((prevNodes) => {
         const livePosMap = new Map<string, { x: number; y: number }>();
@@ -242,13 +359,27 @@ const CanvasInner: React.FC = () => {
     setNodes(layouted);
     resetLayout();
     setTimeout(() => {
-      fitView({ padding: 0.08, duration: 400 });
+      if (activeTerminalNodeId) {
+        fitView({
+          padding: { top: "30px", bottom: "380px", left: "40px", right: "40px" },
+          duration: 400,
+        });
+      } else {
+        fitView({ padding: 0.04, duration: 400 });
+      }
     }, 40);
-  }, [manifest, setNodes, resetLayout, fitView]);
+  }, [manifest, setNodes, resetLayout, fitView, activeTerminalNodeId]);
 
   const handleFitView = useCallback(() => {
-    fitView({ padding: 0.08, duration: 400 });
-  }, [fitView]);
+    if (activeTerminalNodeId) {
+      fitView({
+        padding: { top: "30px", bottom: "380px", left: "40px", right: "40px" },
+        duration: 400,
+      });
+    } else {
+      fitView({ padding: 0.04, duration: 400 });
+    }
+  }, [fitView, activeTerminalNodeId]);
 
   return (
     <div className="w-full h-[calc(100vh-3.5rem)] relative bg-[#090d16]">
@@ -281,7 +412,7 @@ const CanvasInner: React.FC = () => {
         onConnect={onConnect}
         onEdgesDelete={onEdgesDelete}
         fitView
-        fitViewOptions={{ padding: 0.08 }}
+        fitViewOptions={{ padding: 0.04 }}
         minZoom={0.15}
         maxZoom={2.0}
         panOnDrag={[0, 1, 2]}

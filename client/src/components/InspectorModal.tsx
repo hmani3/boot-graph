@@ -5,7 +5,7 @@ import {
   BookOpen,
   FileCode,
   Terminal,
-  Save,
+  Check,
   Trash2,
   CheckCircle2,
   Info,
@@ -29,7 +29,6 @@ export const InspectorModal: React.FC = () => {
     runNode,
     skipNode,
     setActiveTerminalNodeId,
-    saveConfig,
   } = useGraphStore();
 
   const node = manifest?.nodes.find((n) => n.id === selectedNodeId);
@@ -49,15 +48,14 @@ export const InspectorModal: React.FC = () => {
 
   if (!node) return null;
 
-  const handleSave = () => {
+  const handleApply = () => {
     updateNode(node.id, {
       command,
       description,
       tier,
     });
-    saveConfig();
     setSavedNotice(true);
-    setTimeout(() => setSavedNotice(false), 2500);
+    setTimeout(() => setSavedNotice(false), 2000);
   };
 
   const handleDelete = () => {
@@ -312,8 +310,8 @@ export const InspectorModal: React.FC = () => {
 
           <div className="flex items-center gap-3">
             {savedNotice && (
-              <span className="flex items-center gap-1 text-xs text-emerald-400 animate-fade-in font-medium">
-                <CheckCircle2 className="w-4 h-4" /> Saved & Persisted
+              <span className="flex items-center gap-1.5 text-xs text-emerald-400 animate-fade-in font-medium">
+                <CheckCircle2 className="w-4 h-4" /> Applied
               </span>
             )}
             <button
@@ -326,10 +324,10 @@ export const InspectorModal: React.FC = () => {
               <Terminal className="w-4 h-4" /> View Terminal
             </button>
             <button
-              onClick={handleSave}
+              onClick={handleApply}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition shadow"
             >
-              <Save className="w-4 h-4" /> Save Changes
+              <Check className="w-4 h-4" /> Apply Changes
             </button>
           </div>
         </div>

@@ -4,7 +4,6 @@ import {
   RefreshCw,
   Plus,
   Key,
-  Save,
   CheckCircle2,
   FolderGit2,
   Network,
@@ -17,7 +16,6 @@ export const TopBar: React.FC = () => {
     connected,
     runAll,
     rescan,
-    saveConfig,
     setIsEnvModalOpen,
     setIsAddModalOpen,
   } = useGraphStore();
@@ -96,14 +94,6 @@ export const TopBar: React.FC = () => {
           title="Rescan repository"
         >
           <RefreshCw className="w-4 h-4" />
-        </button>
-
-        <button
-          onClick={saveConfig}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-slate-800 transition border border-transparent hover:border-slate-800"
-          title="Save graph configuration"
-        >
-          <Save className="w-4 h-4" />
         </button>
 
         <button

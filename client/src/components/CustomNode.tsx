@@ -144,16 +144,16 @@ export const CustomNode = memo(({ data }: NodeProps<{ node: SetupNode }>) => {
         </div>
 
         <div>
-          <h3 className="font-bold text-base text-white flex items-center gap-2 line-clamp-1">
+          <h3 className="font-bold text-lg text-white flex items-center gap-2 line-clamp-1">
             {node.name}
           </h3>
-          <p className="text-sm text-gray-300 mt-1 line-clamp-2 leading-relaxed">
+          <p className="text-[14.5px] text-gray-200 mt-1 line-clamp-2 leading-relaxed">
             {node.description.split("\n")[0]}
           </p>
         </div>
 
-        <div className="bg-slate-950/90 rounded-lg px-3 py-2 border border-slate-800/80 font-mono text-xs text-emerald-300 flex items-center justify-between overflow-hidden">
-          <span className="truncate pr-2">$ {node.command}</span>
+        <div className="bg-slate-950/90 rounded-lg px-3.5 py-2 border border-slate-800/80 font-mono text-[13px] text-emerald-300 flex items-center justify-between overflow-hidden shadow-inner">
+          <span className="truncate pr-2 font-medium">$ {node.command}</span>
           {node.sourceFile && (
             <span
               title={`Defined in ${node.sourceFile}`}
@@ -166,8 +166,8 @@ export const CustomNode = memo(({ data }: NodeProps<{ node: SetupNode }>) => {
         </div>
 
         {node.docLinks && node.docLinks.length > 0 && (
-          <div className="flex items-center gap-2 text-xs text-indigo-300">
-            <BookOpen className="w-4 h-4 text-indigo-400" />
+          <div className="flex items-center gap-2 text-[13px] text-indigo-300 font-medium">
+            <BookOpen className="w-4 h-4 text-indigo-400 shrink-0" />
             <span className="truncate">
               {node.docLinks[0].title}
               {node.docLinks.length > 1 ? ` (+${node.docLinks.length - 1} docs)` : ""}
@@ -175,27 +175,27 @@ export const CustomNode = memo(({ data }: NodeProps<{ node: SetupNode }>) => {
           </div>
         )}
 
-        <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between gap-2 nodrag cursor-default">
+        <div className="pt-3.5 border-t border-slate-800/60 flex items-center justify-between gap-3 nodrag cursor-default">
           <div className="flex items-center gap-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setActiveTerminalNodeId(node.id);
               }}
-              className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-gray-300 hover:text-white transition"
+              className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-gray-300 hover:text-white transition"
               title="View Live Terminal Logs"
             >
-              <Terminal className="w-4 h-4" />
+              <Terminal className="w-[18px] h-[18px]" />
             </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedNodeId(node.id);
               }}
-              className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-gray-300 hover:text-white transition"
+              className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-gray-300 hover:text-white transition"
               title="Inspect Details, Dev Docs & Edit"
             >
-              <BookOpen className="w-4 h-4" />
+              <BookOpen className="w-[18px] h-[18px]" />
             </button>
             {node.status === "skipped" ? (
               <button
@@ -203,10 +203,10 @@ export const CustomNode = memo(({ data }: NodeProps<{ node: SetupNode }>) => {
                   e.stopPropagation();
                   updateNode(node.id, { status: "ready" });
                 }}
-                className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition"
+                className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition"
                 title="Restore skipped step"
               >
-                <Undo2 className="w-4 h-4" />
+                <Undo2 className="w-[18px] h-[18px]" />
               </button>
             ) : node.status !== "completed" ? (
               <button
@@ -214,10 +214,10 @@ export const CustomNode = memo(({ data }: NodeProps<{ node: SetupNode }>) => {
                   e.stopPropagation();
                   skipNode(node.id);
                 }}
-                className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-gray-400 hover:text-amber-400 transition"
+                className="p-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-gray-400 hover:text-amber-400 transition"
                 title="Skip Step"
               >
-                <SkipForward className="w-4 h-4" />
+                <SkipForward className="w-[18px] h-[18px]" />
               </button>
             ) : null}
           </div>
@@ -228,21 +228,23 @@ export const CustomNode = memo(({ data }: NodeProps<{ node: SetupNode }>) => {
               runNode(node.id);
             }}
             disabled={!isClickable || node.status === "running"}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm ${
+            className={`flex items-center justify-center gap-2.5 px-5 py-2.5 rounded-lg text-sm font-bold whitespace-nowrap shrink-0 transition shadow-sm ${
               node.status === "running"
                 ? "bg-slate-800 text-gray-500 cursor-not-allowed"
                 : isClickable
-                ? "bg-indigo-600 hover:bg-indigo-500 text-white"
+                ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-950/40"
                 : "bg-slate-800/50 text-gray-500 cursor-not-allowed"
             }`}
           >
             {node.status === "running" ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Running
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                <span>Running</span>
               </>
             ) : (
               <>
-                <Play className="w-4 h-4" /> Run Step
+                <Play className="w-4 h-4 fill-current shrink-0" />
+                <span>Run Step</span>
               </>
             )}
           </button>

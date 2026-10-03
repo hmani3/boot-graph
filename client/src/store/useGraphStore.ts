@@ -23,7 +23,6 @@ interface GraphState {
   connectNodes: (source: string, target: string) => void;
   disconnectNodes: (edgeId: string) => void;
   saveEnv: (entries: Record<string, string>) => void;
-  saveConfig: () => void;
   resetLayout: () => void;
   rescan: () => void;
 
@@ -185,13 +184,6 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     const ws = get().ws;
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: "SAVE_ENV", entries }));
-    }
-  },
-
-  saveConfig: () => {
-    const ws = get().ws;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: "SAVE_CONFIG" }));
     }
   },
 
